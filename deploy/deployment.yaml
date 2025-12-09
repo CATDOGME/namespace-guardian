@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: namespace-guardian
+  namespace: kube-system
+spec:
+  replicas: 1   # 后面需要 HA 时可以 + leader election 再调大
+  selector:
+    matchLabels:
+      app: namespace-guardian
+  template:
+    metadata:
+      labels:
+        app: namespace-guardian
+    spec:
+      serviceAccountName: namespace-guardian
+      containers:
+        - name: controller
+          image: registry.example.com/ops/namespace-guardian:v0.1.0  # 替换成自己的镜像地址
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--config=/etc/guardian/config.json"
+            # 不指定 --kubeconfig，使用 in-cluster config
+          volumeMounts:
+            - name: config
+              mountPath: /etc/guardian
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+      volumes:
+        - name: config
+          configMap:
+            name: namespace-guardian-config
+            items:
+              - key: config.json
+                path: config.json

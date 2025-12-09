@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: namespace-guardian-config
+  namespace: kube-system
+data:
+  config.json: |
+    {
+      "monitoringNamespace": "monitoring",
+      "defaultEnv": "dev",
+      "dashboardEnabled": true,
+      "networkPolicyEnabled": false,
+      "quotaProfiles": {
+        "dev": {
+          "name": "dev",
+          "cpuRequests": "2",
+          "cpuLimits": "4",
+          "memRequests": "4Gi",
+          "memLimits": "8Gi",
+          "pods": "50"
+        },
+        "prod": {
+          "name": "prod",
+          "cpuRequests": "8",
+          "cpuLimits": "16",
+          "memRequests": "32Gi",
+          "memLimits": "64Gi",
+          "pods": "200"
+        }
+      }
+    }
