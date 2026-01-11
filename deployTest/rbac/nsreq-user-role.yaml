@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: namespace-guardian-nsreq-user
+rules:
+  # 用户只能申请 NamespaceRequest
+  - apiGroups: ["guardian.guardian.io"]
+    resources: ["namespacerequests"]
+    verbs: ["get", "list", "watch", "create"]
+
+  # 允许查看自己的 Tenant 配置（可选，但生产常见）
+  - apiGroups: ["guardian.guardian.io"]
+    resources: ["tenants"]
+    verbs: ["get", "list", "watch"]

@@ -1,8 +1,8 @@
 apiVersion: guardian.guardian.io/v1alpha1
 kind: NamespaceRequest
 metadata:
-  name: req-tenant-a-test
+  name: req-tenant-a-prod
 spec:
   tenant: tenant-a
-  env: test
+  env: prod
   ownerGroup: team-mlq

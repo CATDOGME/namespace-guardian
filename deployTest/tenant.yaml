@@ -3,8 +3,6 @@ kind: Tenant
 metadata:
   name: tenant-a
 spec:
-  owner: platform-team
-  defaultEnv: dev
   allowedGroups:
-    - ml-team
-    - cv-team
+    - tenant-a:dev
+    - tenant-a:ns-admin
