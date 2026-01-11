@@ -56,6 +56,64 @@ spec:
                 description: Owner 可选：负责人/团队
                 maxLength: 63
                 type: string
+              quota:
+                properties:
+                  byEnv:
+                    additionalProperties:
+                      description: |-
+                        QuotaHard 用字符串表示，方便 YAML 写 resource quantity
+                        注意：不要用 map[string]resource.Quantity 作为 CRD 字段（序列化/校验麻烦）
+                      properties:
+                        configMaps:
+                          type: string
+                        limitsCPU:
+                          type: string
+                        limitsMemory:
+                          type: string
+                        nvidiaGPU:
+                          description: 可选：GPU
+                          type: string
+                        persistentVolumeClaims:
+                          type: string
+                        pods:
+                          type: string
+                        requestsCPU:
+                          type: string
+                        requestsMemory:
+                          type: string
+                        secrets:
+                          type: string
+                        services:
+                          type: string
+                      type: object
+                    description: 按环境覆盖（dev/test/prod）
+                    type: object
+                  default:
+                    description: 默认配额（所有 env 兜底）
+                    properties:
+                      configMaps:
+                        type: string
+                      limitsCPU:
+                        type: string
+                      limitsMemory:
+                        type: string
+                      nvidiaGPU:
+                        description: 可选：GPU
+                        type: string
+                      persistentVolumeClaims:
+                        type: string
+                      pods:
+                        type: string
+                      requestsCPU:
+                        type: string
+                      requestsMemory:
+                        type: string
+                      secrets:
+                        type: string
+                      services:
+                        type: string
+                    type: object
+                type: object
             required:
             - allowedGroups
             type: object

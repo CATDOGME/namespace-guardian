@@ -16,6 +16,35 @@ type TenantSpec struct {
 
 	// +kubebuilder:validation:MinItems=1
 	AllowedGroups []string `json:"allowedGroups"`
+
+	// +optional
+	Quota *TenantQuotaSpec `json:"quota,omitempty"`
+}
+
+type TenantQuotaSpec struct {
+	// 默认配额（所有 env 兜底）
+	Default QuotaHard `json:"default,omitempty"`
+
+	// 按环境覆盖（dev/test/prod）
+	ByEnv map[string]QuotaHard `json:"byEnv,omitempty"`
+}
+
+// QuotaHard 用字符串表示，方便 YAML 写 resource quantity
+// 注意：不要用 map[string]resource.Quantity 作为 CRD 字段（序列化/校验麻烦）
+type QuotaHard struct {
+	RequestsCPU    string `json:"requestsCPU,omitempty"`
+	RequestsMemory string `json:"requestsMemory,omitempty"`
+	LimitsCPU      string `json:"limitsCPU,omitempty"`
+	LimitsMemory   string `json:"limitsMemory,omitempty"`
+
+	Pods                   string `json:"pods,omitempty"`
+	Services               string `json:"services,omitempty"`
+	ConfigMaps             string `json:"configMaps,omitempty"`
+	Secrets                string `json:"secrets,omitempty"`
+	PersistentVolumeClaims string `json:"persistentVolumeClaims,omitempty"`
+
+	// 可选：GPU
+	NvidiaGPU string `json:"nvidiaGPU,omitempty"`
 }
 
 type TenantStatus struct {

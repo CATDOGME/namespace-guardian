@@ -7,7 +7,9 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - limitranges
   - namespaces
+  - resourcequotas
   verbs:
   - create
   - get
@@ -52,3 +54,25 @@ rules:
   - tenants/finalizers
   verbs:
   - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch

@@ -2,8 +2,6 @@ package v1alpha1
 
 import (
 	"context"
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -20,14 +18,6 @@ import (
 
 // 这个 logger 会出现在 controller-manager 的 manager 容器日志中
 var namespacerequestlog = logf.Log.WithName("namespacerequest-webhook")
-
-const (
-	LabelTenant         = "guardian.io/tenant"
-	LabelEnv            = "guardian.io/env"
-	LabelOwnerGroup     = "guardian.io/owner-group"
-	LabelOwnerGroupHash = "guardian.io/owner-group-hash"
-	LabelManaged        = "guardian.io/managed"
-)
 
 const (
 	ValidatePath = "/validate-guardian-guardian-io-v1alpha1-namespacerequest"
@@ -94,17 +84,11 @@ func (d *NamespaceRequestCustomDefaulter) Default(_ context.Context, obj runtime
 	if nr.Labels == nil {
 		nr.Labels = map[string]string{}
 	}
-	nr.Labels[LabelTenant] = nr.Spec.Tenant
-	nr.Labels[LabelEnv] = nr.Spec.Env
+	nr.Labels[guardianv1alpha1.LabelTenant] = nr.Spec.Tenant
+	nr.Labels[guardianv1alpha1.LabelEnv] = nr.Spec.Env
 	//nr.Labels[LabelOwnerGroup] = nr.Spec.OwnerGroup
-	nr.Labels[LabelOwnerGroupHash] = OwnerGroupHash(nr.Spec.OwnerGroup)
-	nr.Labels[LabelManaged] = "true"
+	nr.Labels[guardianv1alpha1.LabelOwnerGroupHash] = guardianv1alpha1.ShortHash16(nr.Spec.OwnerGroup)
+	nr.Labels[guardianv1alpha1.LabelManaged] = "true"
 
 	return nil
-}
-
-func OwnerGroupHash(ownerGroup string) string {
-	s := strings.TrimSpace(ownerGroup)
-	sum := sha1.Sum([]byte(s))
-	return hex.EncodeToString(sum[:])[:16] // 16 hex chars
 }

@@ -6,3 +6,31 @@ spec:
   allowedGroups:
     - tenant-a:dev
     - tenant-a:ns-admin
+
+  quota:
+    default:
+      requestsCPU: "4"
+      requestsMemory: 8Gi
+      limitsCPU: "8"
+      limitsMemory: 16Gi
+      pods: "50"
+      services: "10"
+      configMaps: "100"
+      secrets: "100"
+      persistentVolumeClaims: "10"
+
+    byEnv:
+      prod:
+        requestsCPU: "16"
+        requestsMemory: 64Gi
+        limitsCPU: "32"
+        limitsMemory: 128Gi
+        pods: "200"
+        services: "30"
+        persistentVolumeClaims: "30"
+      dev:
+        requestsCPU: "2"
+        requestsMemory: 4Gi
+        limitsCPU: "4"
+        limitsMemory: 8Gi
+        pods: "30"

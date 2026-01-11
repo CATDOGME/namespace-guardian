@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: controller
-  newTag: dev-1768136405
+  newTag: dev-1768147408

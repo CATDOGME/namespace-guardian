@@ -1,0 +1,28 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: namespace-guardian-rbac-binder
+rules:
+  # 允许创建/更新 RoleBinding 对象本身（也可以放到 manager-role，但放这里更集中）
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["rolebindings"]
+    verbs: ["get","list","watch","create","update","patch","delete"]
+
+  # 关键：只允许 bind 指定的两个 ClusterRole（resourceNames 限制）
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles"]
+    resourceNames: ["guardian-tenant-edit","guardian-tenant-admin"]
+    verbs: ["bind"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: namespace-guardian-rbac-binder
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: namespace-guardian-rbac-binder
+subjects:
+  - kind: ServiceAccount
+    name: namespace-guardian-controller-manager
+    namespace: namespace-guardian-system

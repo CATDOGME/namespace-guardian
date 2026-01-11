@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"github.com/CATDOGME/namespace-guardian/internal/webhook/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"regexp"
 	"strings"
@@ -23,6 +22,10 @@ import (
 // +kubebuilder:rbac:groups=guardian.guardian.io,resources=namespacerequests/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=guardian.guardian.io,resources=tenants,verbs=get;list;watch
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;create;update;patch
+
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch
+// +kubebuilder:rbac:groups="",resources=resourcequotas;limitranges,verbs=get;list;watch;create;update;patch
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=networkpolicies,verbs=get;list;watch;create;update;patch
 
 type NamespaceRequestReconciler struct {
 	client.Client
@@ -65,6 +68,22 @@ func (r *NamespaceRequestReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	if err := r.ensureNamespace(ctx, nsName, &nr); err != nil {
 		l.Error(err, "ensure namespace failed", "namespace", nsName)
 		return ctrl.Result{}, r.setStatusFailed(ctx, &nr, "NamespaceCreateFailed", err.Error())
+	}
+
+	// 创建 namespace 成功后，下发 baseline
+	var t guardiov1alpha1.Tenant
+	if err := r.Get(ctx, types.NamespacedName{Name: tenant}, &t); err != nil {
+		l.Error(err, "get tenant failed", "tenant", tenant)
+	}
+	if err := EnsureBaseline(ctx, r.Client, nsName, BaselineSpec{
+		Tenant:      tenant,
+		Env:         env,
+		OwnerGroup:  strings.TrimSpace(nr.Spec.OwnerGroup),
+		RequestName: nr.Name,
+		TenantObj:   &t,
+	}); err != nil {
+		l.Error(err, "ensure baseline failed", "namespace", nsName)
+		return ctrl.Result{}, r.setStatusFailed(ctx, &nr, "BaselineFailed", err.Error())
 	}
 
 	// 回写 status
@@ -162,7 +181,7 @@ func desiredNSLabels(existing map[string]string, nsName string, nr *guardiov1alp
 		out["guardian.io/env"] = "dev"
 	}
 	ownerGroup := strings.TrimSpace(nr.Spec.OwnerGroup)
-	out["guardian.io/owner-group"] = v1alpha1.OwnerGroupHash(ownerGroup)
+	out["guardian.io/owner-group"] = guardiov1alpha1.ShortHash16(ownerGroup)
 	out["guardian.io/managed"] = "true"
 	out["guardian.io/request"] = nr.Name
 	return out

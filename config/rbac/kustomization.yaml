@@ -28,4 +28,6 @@ resources:
 - tenant_admin_role.yaml
 - tenant_editor_role.yaml
 - tenant_viewer_role.yaml
-
+- guardian-tenant-roles.yaml
+- binder.yaml
+- guardian-tenant-admin.yaml
