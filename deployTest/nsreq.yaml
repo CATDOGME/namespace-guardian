@@ -5,4 +5,4 @@ metadata:
 spec:
   tenant: tenant-a
   env: dev
-  ownerGroup: team-mlq
+  ownerGroup: tenant-a:dev

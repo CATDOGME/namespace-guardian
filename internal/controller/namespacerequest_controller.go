@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"github.com/CATDOGME/namespace-guardian/internal/webhook/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"regexp"
 	"strings"
@@ -161,7 +162,7 @@ func desiredNSLabels(existing map[string]string, nsName string, nr *guardiov1alp
 		out["guardian.io/env"] = "dev"
 	}
 	ownerGroup := strings.TrimSpace(nr.Spec.OwnerGroup)
-	out["guardian.io/owner-group"] = ownerGroup
+	out["guardian.io/owner-group"] = v1alpha1.OwnerGroupHash(ownerGroup)
 	out["guardian.io/managed"] = "true"
 	out["guardian.io/request"] = nr.Name
 	return out

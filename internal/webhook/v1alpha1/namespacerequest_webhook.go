@@ -2,6 +2,8 @@ package v1alpha1
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -20,10 +22,11 @@ import (
 var namespacerequestlog = logf.Log.WithName("namespacerequest-webhook")
 
 const (
-	LabelTenant     = "guardian.io/tenant"
-	LabelEnv        = "guardian.io/env"
-	LabelOwnerGroup = "guardian.io/owner-group"
-	LabelManaged    = "guardian.io/managed"
+	LabelTenant         = "guardian.io/tenant"
+	LabelEnv            = "guardian.io/env"
+	LabelOwnerGroup     = "guardian.io/owner-group"
+	LabelOwnerGroupHash = "guardian.io/owner-group-hash"
+	LabelManaged        = "guardian.io/managed"
 )
 
 const (
@@ -34,7 +37,7 @@ const (
 func SetupNamespaceRequestWebhookWithManager(mgr ctrl.Manager) error {
 	c := mgr.GetClient()
 
-	// 你这个版本 NewDecoder 只返回 1 个值
+	// NewDecoder 只返回 1 个值
 	dec := admission.NewDecoder(mgr.GetScheme())
 
 	// 1) Mutating/Defaulting：用 builder 注册（由 marker 生成 MWC）
@@ -93,8 +96,15 @@ func (d *NamespaceRequestCustomDefaulter) Default(_ context.Context, obj runtime
 	}
 	nr.Labels[LabelTenant] = nr.Spec.Tenant
 	nr.Labels[LabelEnv] = nr.Spec.Env
-	nr.Labels[LabelOwnerGroup] = nr.Spec.OwnerGroup
+	//nr.Labels[LabelOwnerGroup] = nr.Spec.OwnerGroup
+	nr.Labels[LabelOwnerGroupHash] = OwnerGroupHash(nr.Spec.OwnerGroup)
 	nr.Labels[LabelManaged] = "true"
 
 	return nil
+}
+
+func OwnerGroupHash(ownerGroup string) string {
+	s := strings.TrimSpace(ownerGroup)
+	sum := sha1.Sum([]byte(s))
+	return hex.EncodeToString(sum[:])[:16] // 16 hex chars
 }

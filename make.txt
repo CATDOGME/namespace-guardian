@@ -1,0 +1,6 @@
+IMG=controller:dev-$(date +%s)
+make docker-build IMG=$IMG
+kind load docker-image $IMG --name=app-operator
+make deploy IMG=$IMG
+
+kubectl -n namespace-guardian-system rollout status deploy/namespace-guardian-controller-manager

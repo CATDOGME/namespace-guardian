@@ -119,9 +119,10 @@ func (v *NamespaceRequestAuthzValidator) validateCreate(ctx context.Context, req
 
 	// 5) 唯一性：同 (tenant, ownerGroup, env) 只能一个
 	sel := labels.Set{
-		LabelTenant:     tenant,
-		LabelEnv:        env,
-		LabelOwnerGroup: ownerGroup,
+		LabelTenant: tenant,
+		LabelEnv:    env,
+		//LabelOwnerGroup: ownerGroup,
+		LabelOwnerGroupHash: OwnerGroupHash(obj.Spec.OwnerGroup),
 	}.AsSelector()
 
 	// 5.1 先查 NamespaceRequest（避免并发窗口）
