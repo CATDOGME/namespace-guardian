@@ -1,0 +1,9 @@
+apiVersion: guardian.guardian.io/v1alpha1
+kind: NamespaceRequest
+metadata:
+  labels:
+    app.kubernetes.io/name: namespace-guardian
+    app.kubernetes.io/managed-by: kustomize
+  name: namespacerequest-sample
+spec:
+  # TODO(user): Add fields here

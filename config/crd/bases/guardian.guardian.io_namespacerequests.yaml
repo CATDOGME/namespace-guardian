@@ -1,0 +1,83 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: namespacerequests.guardian.guardian.io
+spec:
+  group: guardian.guardian.io
+  names:
+    kind: NamespaceRequest
+    listKind: NamespaceRequestList
+    plural: namespacerequests
+    shortNames:
+    - nsreq
+    singular: namespacerequest
+  scope: Cluster
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: NamespaceRequestSpec：用户提交的申请
+            properties:
+              env:
+                default: dev
+                description: Env 可选：dev/test/prod，默认 dev
+                enum:
+                - dev
+                - test
+                - prod
+                type: string
+              ownerGroup:
+                description: OwnerGroup 必填：申请主体所在的组（用于“一组一个 ns”的唯一性约束）
+                maxLength: 128
+                minLength: 1
+                type: string
+              tenant:
+                description: Tenant 必填：租户ID（对应 Tenant.metadata.name）
+                maxLength: 63
+                minLength: 1
+                type: string
+            required:
+            - ownerGroup
+            - tenant
+            type: object
+          status:
+            description: NamespaceRequestStatus：系统回写状态
+            properties:
+              message:
+                type: string
+              namespaceName:
+                description: NamespaceName：最终创建出的 namespace 名称
+                type: string
+              phase:
+                type: string
+              reason:
+                description: Reason/Message：失败原因（阶段1先留接口）
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

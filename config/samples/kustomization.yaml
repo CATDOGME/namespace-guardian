@@ -1,0 +1,5 @@
+## Append samples of your project ##
+resources:
+- guardian_v1alpha1_tenant.yaml
+- guardian_v1alpha1_namespacerequest.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

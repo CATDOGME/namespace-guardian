@@ -8,4 +8,27 @@ layout:
 - go.kubebuilder.io/v4
 projectName: namespace-guardian
 repo: github.com/CATDOGME/namespace-guardian
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: guardian.io
+  group: guardian
+  kind: Tenant
+  path: github.com/CATDOGME/namespace-guardian/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: guardian.io
+  group: guardian
+  kind: NamespaceRequest
+  path: github.com/CATDOGME/namespace-guardian/api/v1alpha1
+  version: v1alpha1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 version: "3"

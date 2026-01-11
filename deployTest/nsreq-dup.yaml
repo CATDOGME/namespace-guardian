@@ -1,0 +1,8 @@
+apiVersion: guardian.guardian.io/v1alpha1
+kind: NamespaceRequest
+metadata:
+  name: req-tenant-a-dev-dup
+spec:
+  tenant: tenant-a
+  env: dev
+  ownerGroup: team-ml

@@ -1,0 +1,8 @@
+apiVersion: guardian.guardian.io/v1alpha1
+kind: NamespaceRequest
+metadata:
+  name: req-bad-tenant
+spec:
+  tenant: not-exist
+  env: dev
+  ownerGroup: team-ml
