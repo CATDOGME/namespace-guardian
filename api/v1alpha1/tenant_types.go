@@ -4,33 +4,98 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	EnvDev  = "dev"
+	EnvTest = "test"
+	EnvProd = "prod"
+
+	BaselineVersionV1 = "v1"
+
+	NPProfileStandard = "standard" // deny-all + allow-dns + allow-same-namespace
+	NPProfileStrict   = "strict"   // deny-all + allow-dns
+	NPProfileOpen     = "open"     // no default deny
+
+	DefaultOwnerClusterRole = "guardian-tenant-edit"
+	DefaultAdminClusterRole = "guardian-tenant-admin"
+
+	CondValid           = "Valid"
+	CondBaselineApplied = "BaselineApplied"
+)
+
 type TenantSpec struct {
-	// Owner 可选：负责人/团队
+	// Owner is optional metadata for audit/ops.
 	// +kubebuilder:validation:MaxLength=63
 	Owner string `json:"owner,omitempty"`
 
-	// DefaultEnv 可选：默认环境（dev/test/prod）
+	// DefaultEnv is used when NamespaceRequest.spec.env is empty.
 	// +kubebuilder:default:=dev
 	// +kubebuilder:validation:Enum=dev;test;prod
 	DefaultEnv string `json:"defaultEnv,omitempty"`
 
+	// AllowedGroups are the groups allowed to operate within this tenant (tenant-wide gate).
 	// +kubebuilder:validation:MinItems=1
 	AllowedGroups []string `json:"allowedGroups"`
 
+	// Suspend stops applying/updating baseline for this tenant (emergency brake).
+	// Webhook may still allow/deny NamespaceRequest, but controller should skip baseline reconcile when suspended.
+	// +optional
+	Suspend bool `json:"suspend,omitempty"`
+
+	// NamespaceNamePattern optionally constrains generated namespace names for this tenant.
+	// Example: ^tenant-a-(dev|test|prod)-[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+	// +optional
+	NamespaceNamePattern string `json:"namespaceNamePattern,omitempty"`
+
+	// Baseline defines RBAC/Quota/LimitRange/NetworkPolicy defaults and per-env overrides.
+	// +optional
+	Baseline *TenantBaselineSpec `json:"baseline,omitempty"`
+}
+
+type TenantBaselineSpec struct {
+	// Version is used for baseline resource versioning and future upgrades.
+	// +kubebuilder:default:=v1
+	// +kubebuilder:validation:Enum=v1
+	Version string `json:"version,omitempty"`
+
+	// RBAC configures which ClusterRoles are bound into namespaces.
+	// +optional
+	RBAC *TenantRBACSpec `json:"rbac,omitempty"`
+
+	// Quota defines ResourceQuota defaults and per-env overrides.
 	// +optional
 	Quota *TenantQuotaSpec `json:"quota,omitempty"`
+
+	// LimitRange defines default requests/limits and per-env overrides.
+	// +optional
+	LimitRange *TenantLimitRangeSpec `json:"limitRange,omitempty"`
+
+	// NetworkPolicy defines namespace isolation baseline and per-env overrides.
+	// +optional
+	NetworkPolicy *TenantNetworkPolicySpec `json:"networkPolicy,omitempty"`
+}
+
+type TenantRBACSpec struct {
+	// OwnerClusterRole is bound to NamespaceRequest.spec.ownerGroup (Group subject).
+	// +kubebuilder:default:=guardian-tenant-edit
+	// +kubebuilder:validation:MinLength=1
+	OwnerClusterRole string `json:"ownerClusterRole,omitempty"`
+
+	// AdminClusterRole is bound to <tenant>:ns-admin (Group subject).
+	// +kubebuilder:default:=guardian-tenant-admin
+	// +kubebuilder:validation:MinLength=1
+	AdminClusterRole string `json:"adminClusterRole,omitempty"`
 }
 
 type TenantQuotaSpec struct {
-	// 默认配额（所有 env 兜底）
+	// Default quota (fallback for all env).
+	// +optional
 	Default QuotaHard `json:"default,omitempty"`
 
-	// 按环境覆盖（dev/test/prod）
+	// ByEnv overrides quota per env (dev/test/prod).
+	// +optional
 	ByEnv map[string]QuotaHard `json:"byEnv,omitempty"`
 }
 
-// QuotaHard 用字符串表示，方便 YAML 写 resource quantity
-// 注意：不要用 map[string]resource.Quantity 作为 CRD 字段（序列化/校验麻烦）
 type QuotaHard struct {
 	RequestsCPU    string `json:"requestsCPU,omitempty"`
 	RequestsMemory string `json:"requestsMemory,omitempty"`
@@ -43,12 +108,60 @@ type QuotaHard struct {
 	Secrets                string `json:"secrets,omitempty"`
 	PersistentVolumeClaims string `json:"persistentVolumeClaims,omitempty"`
 
-	// 可选：GPU
 	NvidiaGPU string `json:"nvidiaGPU,omitempty"`
 }
 
+type TenantLimitRangeSpec struct {
+	// +optional
+	Default LimitRangeHard `json:"default,omitempty"`
+
+	// +optional
+	ByEnv map[string]LimitRangeHard `json:"byEnv,omitempty"`
+}
+
+type LimitRangeHard struct {
+	DefaultRequestCPU    string `json:"defaultRequestCPU,omitempty"`
+	DefaultRequestMemory string `json:"defaultRequestMemory,omitempty"`
+	DefaultLimitCPU      string `json:"defaultLimitCPU,omitempty"`
+	DefaultLimitMemory   string `json:"defaultLimitMemory,omitempty"`
+
+	MaxCPU    string `json:"maxCPU,omitempty"`
+	MaxMemory string `json:"maxMemory,omitempty"`
+	MinCPU    string `json:"minCPU,omitempty"`
+	MinMemory string `json:"minMemory,omitempty"`
+}
+
+type TenantNetworkPolicySpec struct {
+	// +kubebuilder:default:=standard
+	// +kubebuilder:validation:Enum=standard;strict;open
+	Profile string `json:"profile,omitempty"`
+
+	// +optional
+	AllowEgressCIDRs []string `json:"allowEgressCIDRs,omitempty"`
+
+	// +optional
+	ByEnv map[string]TenantNetworkPolicyEnvOverride `json:"byEnv,omitempty"`
+}
+
+type TenantNetworkPolicyEnvOverride struct {
+	// +optional
+	// +kubebuilder:validation:Enum=standard;strict;open
+	Profile string `json:"profile,omitempty"`
+
+	// +optional
+	AllowEgressCIDRs []string `json:"allowEgressCIDRs,omitempty"`
+}
+
 type TenantStatus struct {
-	// 先留空，阶段1不需要
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
+	// ManagedNamespaces is a lightweight summary for ops.
+	// +optional
+	ManagedNamespaces int32 `json:"managedNamespaces,omitempty"`
+
+	// +optional
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
