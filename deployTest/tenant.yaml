@@ -3,34 +3,70 @@ kind: Tenant
 metadata:
   name: tenant-a
 spec:
+  owner: lab-sre
+  defaultEnv: dev
+
   allowedGroups:
     - tenant-a:dev
+    - tenant-a:test
+    - tenant-a:prod
     - tenant-a:ns-admin
 
-  quota:
-    default:
-      requestsCPU: "4"
-      requestsMemory: 8Gi
-      limitsCPU: "8"
-      limitsMemory: 16Gi
-      pods: "50"
-      services: "10"
-      configMaps: "100"
-      secrets: "100"
-      persistentVolumeClaims: "10"
+  # 紧急开关：需要时可先 suspend=true，防止 controller 继续下发/改动 baseline
+  suspend: false
 
-    byEnv:
-      prod:
-        requestsCPU: "16"
-        requestsMemory: 64Gi
-        limitsCPU: "32"
-        limitsMemory: 128Gi
-        pods: "200"
-        services: "30"
-        persistentVolumeClaims: "30"
-      dev:
+  # 可选：命名约束（给 webhook/生成器用）
+  # namespaceNamePattern: '^tenant-a-(dev|test|prod)-[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
+
+  baseline:
+    version: v1
+
+    rbac:
+      ownerClusterRole: guardian-tenant-edit
+      adminClusterRole: guardian-tenant-admin
+
+    quota:
+      default:
         requestsCPU: "2"
-        requestsMemory: 4Gi
+        requestsMemory: "4Gi"
         limitsCPU: "4"
-        limitsMemory: 8Gi
+        limitsMemory: "8Gi"
         pods: "30"
+        services: "10"
+        configMaps: "100"
+        secrets: "100"
+        persistentVolumeClaims: "10"
+      byEnv:
+        prod:
+          requestsCPU: "8"
+          requestsMemory: "16Gi"
+          limitsCPU: "16"
+          limitsMemory: "32Gi"
+          pods: "100"
+
+    limitRange:
+      default:
+        defaultRequestCPU: "100m"
+        defaultRequestMemory: "256Mi"
+        defaultLimitCPU: "1"
+        defaultLimitMemory: "1Gi"
+      byEnv:
+        prod:
+          defaultRequestCPU: "200m"
+          defaultRequestMemory: "512Mi"
+          defaultLimitCPU: "2"
+          defaultLimitMemory: "2Gi"
+
+    networkPolicy:
+      profile: standard
+      allowEgressCIDRs:
+        - "10.0.0.0/8"
+        - "172.16.0.0/12"
+        - "192.168.0.0/16"
+      byEnv:
+        prod:
+          profile: strict
+          allowEgressCIDRs:
+            - "10.0.0.0/8"
+            - "172.16.0.0/12"
+            - "192.168.0.0/16"
